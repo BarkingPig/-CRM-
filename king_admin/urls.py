@@ -1,10 +1,10 @@
 
 from king_admin import views
-from django.urls import path
+from django.conf.urls import url
 
 urlpatterns = [
 
-    path('$/', views.king_admin_index), # 别名传前端
-    path('table', views.table_index),
+    url(r'^$', views.king_admin_index, name="king_admin_index"), # 别名传前端
+    url(r'^/(\w+)/(\w+)/$', views.table_index, name="table_index"),
 
 ]

@@ -1,5 +1,107 @@
 {% extends 'king_admin/king_admin.html' %}
+{% load my_tags %}
+
 
 {% block container %}
-sdaftsdf
+<ul class="nav nav-tabs">
+  <li role="presentation" ><a href="{% url 'king_admin_index'  %}">首页</a></li>
+  <li role="presentation"><a href="{% url 'king_admin_index' %}">ASD</a></li>
+  <li role="presentation" class="active"><a href="">AS</a></li>
+</ul>
+{# 顶端的导航#}
+    {{ admin_class.list_display }}
+    <div class="panel panel-info">
+         <div class="panel-heading">
+              <h3 class="panel-title">Panel title</h3>
+          </div>
+          <div class="panel-body">
+          {#              搜索#}
+<div id="toolbar">
+    <form id="changelist-search" method="get" >
+      <div><!-- DIV needed for valid HTML -->
+         <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+          <input type="text" size="40" name="q" value="{% have_key_value all_key_value 'q' %}"
+                 placeholder="搜索{% for search_field in admin_class.search_fields %}{{ ' ' }}{{search_field}}{% endfor %}">
+{#                                             value=""不可以有一个空格不然 placeholder标签（提示标签）就不会起作用 #}
+               {% add_url_keys all_key_value 'q'%}
+{#          <input type="hidden" name="o" value="name">#}
+{#      #}
+{#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
+          <input type="submit" value="搜索">
+{#         <span class="small quiet">0 条结果。 (<a href="?">总共 9</a>)</span>#}
+{#    <input type="hidden" name="source__exact" value="6">#}
+
+      </div>
+    </form>
+</div>
+ <div class="row">
+  {#            <!--将筛选提交提交到后台进行查询--!>#}
+     <form method="get">
+         {% for condition in admin_class.list_filters %}
+{#                        condition 筛选 的 字段#}
+             <div class="col-lg-2">
+                 <span >{{  condition }}</span>
+                 {% render_filter_ele condition admin_class filter_conditions %}
+             </div>
+         {% endfor %}
+
+         {% if admin_class.list_filters != Null %}
+             {% add_url_keys all_key_value 'list' admin_class.list_filters%}
+             {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
+             <div class="col-lg-2">
+                 <input type="submit" class="btn btn-info" style="margin-top:20px" value="检查">
+             </div>
+          {% endif %}
+     </form>
+ </div>
+         {#            <!--动态展示后端的表格的相应字段（admin_class.list_display）--!>#}
+ <table class="table table-hover">
+     <thead>
+     <tr>
+         {% for column in admin_class.list_display %}
+             {% render_order_ele order_key column all_key_value %}
+{#                             循环要显示的字段字段#}
+{#                             {% if order_key %} 先判断order_key是否为空 回出错 要先从all_key_value取得需要的键值对在判断#}
+{#                                {% render_order_ele order_key column all_key_value %}#}
+{#                        order_key是排序后后端返回的o='' 给前端的字段名加排序的链接，在后端排序的函数中用request.get('o')可以取得o={{ column }}#}
+{#                             {% else %}#}
+{#                             <th><a href="?o={{ column }}">{{ column }}</a></th>#}
+{#                             没点击过排序 order_key为空，就是没有o=''键值对#}
+{#                             {% endif %}#}
+         {% endfor %}
+     </tr>
+     </thead>
+ <tbody>
+ {#            <!--动态展示后端的表格中的数据--!>#}
+                     {% for obj in query_sets %}
+                         <tr>
+                             {% build_table_row obj admin_class %}
+                         </tr>
+                     {% endfor %}
+                 </tbody>
+ </table>
+{#                     <!--分页--!>#}
+             <nav aria-label="...">
+             <li>查询总条数{{ query_sets.paginator.count }}</li>
+{#              query_sets是 ’Page’对象（具体页面对象）page反得Paginator对象 # 存有从数据库取来的数据总条数数量#}
+               <ul class="pagination">
+                   {% if query_sets.has_previous %}
+{#                        has_previous  是否有上一页#}
+                      <li><a href="?page={{ query_sets.previous_page_number }}">上一页</a></li>
+                   {% endif %}
+                   {% for loop_counter in query_sets.paginator.page_range %}
+                     {% render_page_ele loop_counter query_sets all_key_value%}
+{#     page_range:总页数的索引范围，如: (1,10),(1,200) loop_counter循环到的页码    query_sets是 ’Page’对象#}
+{#     all_key_value 存有前端页面的所有键值对 筛选条件 页码 排序（以键值对的形式），传入到render_page_ele的自定义标签在其中加入到a标签中在a标签中传入到相应的页面中#}
+                   {% endfor %}
+                   {% if query_sets.has_next %}
+                       {#                       has_next  是否有下一页#}
+                      <li><a href="?page={{ query_sets.next_page_number }}">下一页</a></li>
+                   {% endif %}
+               </ul>
+             </nav>
+
+         </div>
+    </div>
+
 {% endblock %}

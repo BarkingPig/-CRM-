@@ -46,7 +46,8 @@
                         {% for table_name,admin  in app_tables.items %}
                             <tr>
                                 <td>
-                                    <a href="table">
+                                    <a href="{% url 'table_index' app_name table_name %}">
+{#                                        跳转，并把app_name table_name 传到 'table_index' 的后台#}
                                        {% app_table_name admin %}
                                     </a>
                                 </td>
@@ -57,7 +58,6 @@
                     </tbody>
                  </table>
               {% endfor %}
-
           </div>
         </div>
     </div>
