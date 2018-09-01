@@ -46,7 +46,7 @@
          {% endfor %}
 
          {% if admin_class.list_filters != Null %}
-             {% add_url_keys all_key_value 'list' admin_class.list_filters%}
+             {% add_url_keys admin_class all_key_value 'list' admin_class.list_filters%}
              {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
              <div class="col-lg-2">
                  <input type="submit" class="btn btn-info" style="margin-top:20px" value="检查">

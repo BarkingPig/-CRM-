@@ -2,7 +2,7 @@
 
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.timezone import datetime, timedelta
+from django.utils.timezone import datetime , timedelta
 register = template.Library()  # register的名字是固定的,不可改变
 
 
@@ -83,10 +83,22 @@ def render_page_ele(loop_counter, query_sets, all_key_value):
 
 
 @register.simple_tag
+def dispose_filter_time(admin_class):
+    not_list_filter = []
+    list_filter = admin_class.model.list_filters
+    for condition in list_filter:
+        field_obj = admin_class.model._meta.get_field(condition)
+        if type(field_obj).__name__ in ['DateTimeField', 'DateField']:
+            condition = condition+'__gte'
+        not_list_filter.append(condition)
+
+
+
+@register.simple_tag
 def render_filter_ele(condition, admin_class, filter_conditions):
     """
     构建筛选的组件（给组件导入数据）
-    :param condition: 筛选的字段 键值对
+    :param condition: 筛选的字段
     :param admin_class: admin_class.model models_class: 相应的表对象 models.UserProfile
     :param filter_conditions: request.GET.items() 存有筛选的筛选条件（以键值对的形式）request.GET.items()
     :return:
@@ -121,10 +133,9 @@ def render_filter_ele(condition, admin_class, filter_conditions):
 
     if type(field_obj).__name__ in ['DateTimeField', 'DateField']:
         date_els = []
-        today_ele = datetime.now().date()
-        print(today_ele, today_ele - timedelta(days=7), '44444444444444444444444444444444444444444444')
+        today_ele = datetime.now().date() # 今天时间
         date_els.append(['今天', datetime.now().date()])
-        date_els.append(["昨天", today_ele - timedelta(days=1)])
+        date_els.append(["昨天到现在", today_ele - timedelta(days=1)])
         date_els.append(["近7天", today_ele - timedelta(days=7)])
         date_els.append(["近30天", today_ele - timedelta(days=30)])
         date_els.append(["近90天", today_ele - timedelta(days=90)])
@@ -133,11 +144,12 @@ def render_filter_ele(condition, admin_class, filter_conditions):
 
         selected = ''
         for item in date_els:
-            if filter_conditions.get(condition) == str(item[0]):
+            if filter_conditions.get(condition+'__gte') == item[1].strftime("%Y-%m-%d"):  #str(item[1])一个时间段
                 selected = "selected"
             select_ele += '''<option value='%s' %s>%s</option>''' % (item[1], selected, item[0])
+
             selected = ''
-        condition = "%s__gte" % condition  # ????????
+        condition = "%s__gte" % condition  # a__gte=0 也就是找大于0的所有数据
 
     select_ele += "</select>"
     select_ele = select_ele.format(condition=condition)  # 替换select_ele中的condition
@@ -213,7 +225,7 @@ def have_key_value(all_key_value, key):
     return value
 
 @register.simple_tag
-def add_url_keys(all_key_value, *not_keys):
+def add_url_keys(admin_class,all_key_value, *not_keys):
     """
     {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
     :param all_key_value: 原先页面所有的键值对（字典的形式）
@@ -222,9 +234,17 @@ def add_url_keys(all_key_value, *not_keys):
     """
     eles = ''
     if not_keys[0] == 'list':
-        not_keys = not_keys[1]
+        not_list_filter = []
+        for condition in not_keys[1]:
+            field_obj = admin_class.model._meta.get_field(condition)
+            if type(field_obj).__name__ in ['DateTimeField', 'DateField']:
+                condition = condition + '__gte'
+            not_list_filter.append(condition)
+        not_keys = not_list_filter
+
     for k, v in all_key_value.items():
-        if k not in not_keys:
+        print(type(k),'777777777777777777777777777777777')
+        if k not in not_keys and '__gte' not in k :
             ele = """<input type="hidden" name="%s" value="%s">""" % (k, v)
         else:
             ele = ''
