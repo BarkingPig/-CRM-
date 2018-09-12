@@ -5,5 +5,6 @@ from django.test import TestCase
 
 
 if __name__ == '__main__':
-    str = 'date__gte'
-    print('__gte'  in str)
+    a=[5,6,7,8]
+    for index, b in enumerate(a):
+        print(index,b)

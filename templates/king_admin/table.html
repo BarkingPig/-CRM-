@@ -9,10 +9,12 @@
   <li role="presentation" class="active"><a href="">AS</a></li>
 </ul>
 {# 顶端的导航#}
-    {{ admin_class.list_display }}
     <div class="panel panel-info">
          <div class="panel-heading">
-              <h3 class="panel-title">Panel title</h3>
+              <h3 class="panel-title">{% get_table_name admin_class %}
+              <a href="{{ request.path }}add/" class="pull-right">
+                  <span class="glyphicon glyphicon-plus "  aria-hidden="true">add</span></a>
+              </h3>
           </div>
           <div class="panel-body">
           {#              搜索#}
@@ -22,25 +24,22 @@
          <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
           <input type="text" size="40" name="q" value="{% have_key_value all_key_value 'q' %}"
                  placeholder="搜索{% for search_field in admin_class.search_fields %}{{ ' ' }}{{search_field}}{% endfor %}">
-{#                                             value=""不可以有一个空格不然 placeholder标签（提示标签）就不会起作用 #}
-               {% add_url_keys all_key_value 'q'%}
+{#        value=""不可以有一个空格不然 placeholder标签（提示标签）就不会起作用 #}
+               {% add_url_keys admin_class all_key_value 'q'%}
 {#          <input type="hidden" name="o" value="name">#}
 {#      #}
 {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
           <input type="submit" value="搜索">
-{#         <span class="small quiet">0 条结果。 (<a href="?">总共 9</a>)</span>#}
-{#    <input type="hidden" name="source__exact" value="6">#}
-
       </div>
     </form>
 </div>
  <div class="row">
-  {#            <!--将筛选提交提交到后台进行查询--!>#}
+  {#            <!--构建筛选框将筛选提交提交到后台进行查询--!>#}
      <form method="get">
          {% for condition in admin_class.list_filters %}
 {#                        condition 筛选 的 字段#}
              <div class="col-lg-2">
-                 <span >{{  condition }}</span>
+                 <span><b>{{  condition }}</b></span>
                  {% render_filter_ele condition admin_class filter_conditions %}
              </div>
          {% endfor %}
@@ -48,20 +47,40 @@
          {% if admin_class.list_filters != Null %}
              {% add_url_keys admin_class all_key_value 'list' admin_class.list_filters%}
              {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
-             <div class="col-lg-2">
+             <div class="col-lg-2 pull-left" >
                  <input type="submit" class="btn btn-info" style="margin-top:20px" value="检查">
              </div>
           {% endif %}
      </form>
  </div>
+ <form onsubmit="return ActionSubmit(this)" method="POST">{% csrf_token %}
+    <div class="row">
+    <div class="col-lg-2">
+        <select id="action_list" name="action" class="form-control" style="margin-top:15px">
+                  <option value="">---------</option>
+            {% for action in admin_class.actions %}
+
+                 <option value="{{ action }}">{% get_action_verbose_name admin_class action %}</option>
+
+            {% endfor %}
+        </select>
+    </div>
+         <div class="col-lg-2 pull-left" >
+                 <input type="submit" class="btn  " style="margin-top:20px" value="执行">
+         </div>
+
+
+    </div>
+</form>
          {#            <!--动态展示后端的表格的相应字段（admin_class.list_display）--!>#}
- <table class="table table-hover">
+ <table class="table table-striped">
      <thead>
      <tr>
+        <th width="50xp"><input type="checkbox" onclick="CheckAllToggle(this)"></th>
          {% for column in admin_class.list_display %}
              {% render_order_ele order_key column all_key_value %}
 {#                             循环要显示的字段字段#}
-{#                             {% if order_key %} 先判断order_key是否为空 回出错 要先从all_key_value取得需要的键值对在判断#}
+{#                             {% if order_key %} 先判断order_key是否为空 会出错 要先从all_key_value取得需要的键值对在判断#}
 {#                                {% render_order_ele order_key column all_key_value %}#}
 {#                        order_key是排序后后端返回的o='' 给前端的字段名加排序的链接，在后端排序的函数中用request.get('o')可以取得o={{ column }}#}
 {#                             {% else %}#}
@@ -74,8 +93,11 @@
  <tbody>
  {#            <!--动态展示后端的表格中的数据--!>#}
                      {% for obj in query_sets %}
+{#                         query_sets是 ’Page’对象（具体页面对象）page反得Paginator对象 # 存有从数据库取来的数据总条数数量#}
                          <tr>
-                             {% build_table_row obj admin_class %}
+                         <td><input tag='obj_checkbox' type="checkbox" value="{{ obj.id }}"></td>
+                             {% build_table_row request obj admin_class %}
+{#                         obj 是单条数据对象#}
                          </tr>
                      {% endfor %}
                  </tbody>
@@ -85,23 +107,65 @@
              <li>查询总条数{{ query_sets.paginator.count }}</li>
 {#              query_sets是 ’Page’对象（具体页面对象）page反得Paginator对象 # 存有从数据库取来的数据总条数数量#}
                <ul class="pagination">
-                   {% if query_sets.has_previous %}
+{#                   {% if query_sets.has_previous %}#}
 {#                        has_previous  是否有上一页#}
-                      <li><a href="?page={{ query_sets.previous_page_number }}">上一页</a></li>
-                   {% endif %}
+{#                      <li><a href="?page={{ query_sets.previous_page_number }}">上一页</a></li>#}
+{#                   {% endif %}#}
                    {% for loop_counter in query_sets.paginator.page_range %}
                      {% render_page_ele loop_counter query_sets all_key_value%}
 {#     page_range:总页数的索引范围，如: (1,10),(1,200) loop_counter循环到的页码    query_sets是 ’Page’对象#}
 {#     all_key_value 存有前端页面的所有键值对 筛选条件 页码 排序（以键值对的形式），传入到render_page_ele的自定义标签在其中加入到a标签中在a标签中传入到相应的页面中#}
                    {% endfor %}
-                   {% if query_sets.has_next %}
+{#                   {% if query_sets.has_next %}#}
                        {#                       has_next  是否有下一页#}
-                      <li><a href="?page={{ query_sets.next_page_number }}">下一页</a></li>
-                   {% endif %}
+{#                      <li><a href="?page={{ query_sets.next_page_number }}">下一页</a></li>#}
+{#                   {% endif %}#}
                </ul>
              </nav>
 
          </div>
     </div>
 
+{#    JS_________________________________________________#}
+     <script>
+        function CheckAllToggle(ele){
+            {#ele是<input type="checkbox" onclick="CheckAllToggle(this)">#}
+            {#console.log($(ele).prop("checked"))#}
+            console.log($("input[tag='obj_checkbox']"))
+            if ( $(ele).prop("checked")){
+                $("input[tag='obj_checkbox']").prop("checked",true);
+                {#找到tag='obj_checkbox'的checked并把它"checked"为true#}
+            }else {
+                $("input[tag='obj_checkbox']").prop("checked",false);
+            }
+            {#console.log($("input[tag='obj_checkbox").prop("value"))#}
+        }
+
+
+       function ActionSubmit(form_ele) {
+            //自定义的执行框action
+           var selected_ids = [];
+           $("input[tag='obj_checkbox']:checked").each(function () {
+               selected_ids.push($(this).val());
+           })
+           var selected_action = $("#action_list").val();  {#？？？？？？？？？？#}
+           console.log("1231231231")
+           console.log(selected_ids)
+           console.log(selected_action)
+           if (selected_ids.length == 0){
+               alert("没有选取数据!");
+               return
+           }
+           if (!selected_action ){
+               alert("没有选择执行操作!");
+           }
+           //{#把选中的数据放到表单中之后在一起发向后端#}
+            var selected_ids_ele = "<input  name='selected_ids' type='hidden' value='" + selected_ids.toString() + "' >"
+           {#把选中的数据放到表单中之后在一起发向后端#}
+            $(form_ele).append(selected_ids_ele);
+
+           return true;
+        }
+
+    </script>
 {% endblock %}

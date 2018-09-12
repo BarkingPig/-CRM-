@@ -2,7 +2,8 @@
 
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.timezone import datetime , timedelta
+from django.utils.timezone import datetime, timedelta
+
 register = template.Library()  # register的名字是固定的,不可改变
 
 
@@ -13,15 +14,15 @@ def app_table_name(admin_class):
 
 
 @register.simple_tag
-def build_table_row(obj, admin_class):
+def build_table_row(request, obj, admin_class):
     '''
-    生成数据内容的td,填充到table中,展示前端
-    :param obj: 一个’Page’对象（一个页面里所有显示的数据的对象）
+    生成数据内容的,填充到table中,展示前端 # 为数据的id添加跳转修改页面的链接
+    :param obj: 一个’Page’对象（一个页面里所有显示的数据的对象）中的obj 单条数据对象
     :param admin_class: 需要显示的字段
     :return:
     '''
     row_ele = ''
-    for column in admin_class.list_display:
+    for index, column in enumerate(admin_class.list_display):  # enumerate获取列表的索引index
         # 获取每个字段的类型的对象
         # print(obj, '1231231231123123123123123')
         field_obj = obj._meta.get_field(column)
@@ -36,7 +37,13 @@ def build_table_row(obj, admin_class):
         if type(column_data).__name__ == 'datetime':
             # 如果是时间类型,则需要进行格式化显示
             column_data = column_data.strftime('%Y-%m-%d %H:%M:%S')
-        row_ele += '<td>%s</td>' % column_data
+        if index == 0:  # 为数据的id添加跳转修改页面的链接
+            row_ele += "<td><a href='{request_path}{obj_id}/change/'/>{column_data}</a></td>".format(
+                request_path=request.path,
+                obj_id=obj.id,
+                column_data=column_data)
+        else:
+            row_ele += '<td>%s</td>' % column_data
     return mark_safe(row_ele)
 
 
@@ -89,9 +96,8 @@ def dispose_filter_time(admin_class):
     for condition in list_filter:
         field_obj = admin_class.model._meta.get_field(condition)
         if type(field_obj).__name__ in ['DateTimeField', 'DateField']:
-            condition = condition+'__gte'
+            condition = condition + '__gte'
         not_list_filter.append(condition)
-
 
 
 @register.simple_tag
@@ -133,7 +139,7 @@ def render_filter_ele(condition, admin_class, filter_conditions):
 
     if type(field_obj).__name__ in ['DateTimeField', 'DateField']:
         date_els = []
-        today_ele = datetime.now().date() # 今天时间
+        today_ele = datetime.now().date()  # 今天时间
         date_els.append(['今天', datetime.now().date()])
         date_els.append(["昨天到现在", today_ele - timedelta(days=1)])
         date_els.append(["近7天", today_ele - timedelta(days=7)])
@@ -144,7 +150,7 @@ def render_filter_ele(condition, admin_class, filter_conditions):
 
         selected = ''
         for item in date_els:
-            if filter_conditions.get(condition+'__gte') == item[1].strftime("%Y-%m-%d"):  #str(item[1])一个时间段
+            if filter_conditions.get(condition + '__gte') == item[1].strftime("%Y-%m-%d"):  # str(item[1])一个时间段
                 selected = "selected"
             select_ele += '''<option value='%s' %s>%s</option>''' % (item[1], selected, item[0])
 
@@ -224,8 +230,9 @@ def have_key_value(all_key_value, key):
         value = ''
     return value
 
+
 @register.simple_tag
-def add_url_keys(admin_class,all_key_value, *not_keys):
+def add_url_keys(admin_class, all_key_value, *not_keys):
     """
     {#关于请求方式为GET的form表单，action属性后不能带参数的问题,让关键字变成表单的传入值#}
     :param all_key_value: 原先页面所有的键值对（字典的形式）
@@ -243,11 +250,115 @@ def add_url_keys(admin_class,all_key_value, *not_keys):
         not_keys = not_list_filter
 
     for k, v in all_key_value.items():
-        print(type(k),'777777777777777777777777777777777')
-        if k not in not_keys and '__gte' not in k :
+        # print(type(k), '777777777777777777777777777777777')
+        if k not in not_keys and '__gte' not in k:
             ele = """<input type="hidden" name="%s" value="%s">""" % (k, v)
         else:
             ele = ''
         eles += ele
 
     return mark_safe(eles)
+
+
+@register.simple_tag
+def get_table_name(admin_class):
+    """
+    获取表的别名
+    :param admin_class:  表的对象
+    :return:
+    """
+    return admin_class.model._meta.verbose_name_plural
+
+
+@register.simple_tag
+def get_associated_record(obj_list):
+    '''
+    把要删除记录对象及所有相关联的记录取出来
+    :param obj_list: 要删除记录对象组成的列表
+    :return:
+    '''
+    if obj_list:
+        return mark_safe(recursive_related_objs_lookup(obj_list))
+
+
+def recursive_related_objs_lookup(obj_list):
+    """
+    列出和要删除记录对象的相关对象(递归)
+    :param obj_list: 要删除的记录对象(删除多个记录时，记录对象是存于obj_list列表中)
+    :return:
+    """
+
+    ul_ele = "<ul>"
+    for obj in obj_list:
+        li_ele = '''<li> %s: %s </li>''' % (obj._meta.verbose_name_plural, obj.__str__().strip("<>"))
+        # obj._meta.verbose_name_plural 记录所在表的别名  obj.__str__().strip("<>")去<>括号
+        ul_ele += li_ele
+
+        # for local many to many
+        # print("------- obj._meta.local_many_to_many", obj._meta.local_many_to_many)
+        for m2m_field in obj._meta.local_many_to_many:
+            # obj._meta.local_many_to_many把所有跟这个对象直接关联的m2m表的相关联字段取出来了（多对多），
+            # 可能存在多个表和该要删除记录所在表有多对多的关系
+            sub_ul_ele = "<ul>"
+            m2m_field_obj = getattr(obj, m2m_field.name)  # getattr(customers中要删除的记录对象, 'tags') 得到这个对象tags字段的值
+            for o in m2m_field_obj.select_related():
+                # customer.tags.select_related()通过多对多外键获取删除记录的多对多的链接的表中的对应记录
+                li_ele = '''<li> %s: %s </li>''' % (m2m_field.verbose_name, o.__str__().strip("<>"))
+                sub_ul_ele += li_ele
+
+            sub_ul_ele += "</ul>"
+            ul_ele += sub_ul_ele  # 最终跟最外层的ul相拼接
+
+        for related_obj in obj._meta.related_objects:
+            # 获取和obj(要删除的记录)直接相关的关联表（也就是主动联系（有ManyToManyRel的一方表记录）得不到多对多  被动链接的一方可以得到）
+            if 'ManyToManyRel' in related_obj.__repr__():
+                if hasattr(obj, related_obj.get_accessor_name()):  # hassattr(customer,'enrollment_set')
+                    accessor_obj = getattr(obj, related_obj.get_accessor_name())
+                    print("-------ManyToManyRel", accessor_obj, related_obj.get_accessor_name())
+                    # 上面accessor_obj 相当于 customer.enrollment_set
+                    if hasattr(accessor_obj, 'select_related'):
+                        # select_related() == all() 只有ManyToManyRel有'select_related'
+                        target_objs = accessor_obj.select_related()  # .filter(**filter_coditions)
+                        # target_objs 相当于 customer.enrollment_set.all()
+
+                        sub_ul_ele = "<ul style='color:red'>"
+                        for o in target_objs:
+                            li_ele = '''<li> %s: %s </li>''' % (o._meta.verbose_name_plural, o.__str__().strip("<>"))
+                            sub_ul_ele += li_ele
+                        sub_ul_ele += "</ul>"
+                        ul_ele += sub_ul_ele
+
+            elif hasattr(obj, related_obj.get_accessor_name()):
+                # hassattr(customer,'enrollment_set')
+                accessor_obj = getattr(obj, related_obj.get_accessor_name())  # ???????????????????????????
+                # 上面accessor_obj 相当于 customer.enrollment_set
+                if hasattr(accessor_obj, 'select_related'):  # slect_related() == all()
+                    target_objs = accessor_obj.select_related()  # .filter(**filter_coditions)
+                    # target_objs 相当于 customer.enrollment_set.all()
+                else:
+                    print("one to one i guess:", accessor_obj)
+                    target_objs = accessor_obj
+
+                if len(target_objs) > 0:
+                    # print("\033[31;1mdeeper layer lookup -------\033[0m")
+                    # nodes = recursive_related_objs_lookup(target_objs,model_name)
+                    nodes = recursive_related_objs_lookup(target_objs)
+                    ul_ele += nodes
+    ul_ele += "</ul>"
+    return ul_ele
+
+
+@register.simple_tag
+def get_action_verbose_name(admin_class, action):
+    """
+    获取自定义（执行框里的）功能（函数）的别名
+    :param admin_class: king_admin里定义的表对象（自定义的执行功能函数是写在king_admin里的）是表对象下的一个函数
+    :param action:
+    :return:
+    """
+    action_func = getattr(admin_class, action)  # 获取对应的函数
+    if hasattr(action_func, 'verbose_name'):  # 判断函数里是否有别名
+        action_verbose_name = getattr(action_func, 'verbose_name')
+    else:
+        action_verbose_name = action
+    return action_verbose_name

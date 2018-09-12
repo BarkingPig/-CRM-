@@ -1,0 +1,15 @@
+{% extends 'king_admin/king_admin.html' %}
+{% load my_tags %}
+{% block container %}
+
+{% get_associated_record  obj_list %}
+
+    <form method="post">{% csrf_token %}
+        <input type="submit" class="btn btn-danger" value="是的">
+        <input type="hidden" value="yes" name="delete_confirm">
+        <input type="hidden" value="{{ selected_ids }}" name="selected_ids">
+        <input type="hidden" value="{{ action }}" name="action">
+        <a class="btn btn-info" href="{% url 'table_index' app_name table_name  %}">不</a>
+    </form>
+
+{% endblock %}

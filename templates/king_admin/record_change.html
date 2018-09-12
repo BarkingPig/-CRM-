@@ -1,0 +1,51 @@
+{% extends 'king_admin/king_admin.html' %}
+
+{% block container %}
+<ul class="nav nav-tabs">
+  <li role="presentation" ><a href="{% url 'king_admin_index'  %}">首页</a></li>
+  <li role="presentation"><a href="{% url 'king_admin_index' %}">ASD</a></li>
+  <li role="presentation" class="active"><a href="">AS</a></li>
+</ul>
+    <div class="bs-example" style="margin: 10px;width: auto">
+     <form class="form-horizontal" role="form" method="post" onsubmit='return Form_Submit_Before()'>{% csrf_token %}
+{#    ???????????????????????????????#}
+    <span style="color: red">{{ form_obj.errors }}</span>
+{#     填写错误的报错提示#}
+    {% for field in form_obj %}
+      <div class="form-group">
+       <label  class="col-sm-2 fieldBox" style="font-weight: normal">
+           {% if field.field.required %}
+{#               判断字段是不是不可为空的（必填）#}
+               <b>{{ field.field.label }} :</b>
+           {% else %}
+                {{ field.label }} :
+           {% endif %}
+       </label>
+          <div class="col-sm-6 pull-left">
+                {{ field }}
+          </div>
+      </div>
+    {% endfor %}
+    <div class="form-group ">
+          <div class="col-sm-10 ">
+            <button type="submit" class="btn btn-success pull-right">Save</button>
+          </div>
+          <div class="col-sm-10 ">
+
+                <a class="btn btn-danger" href="{% url 'record_delete_index' app_name table_name form_obj.instance.id %}">
+                    delete</a>
+{#              form_obj.instance.id对应的记录对象#}
+          </div>
+    </div>
+    </form>
+    </div>
+<script>
+
+    function Form_Submit_Before(){
+        $("form").find("[disabled]").removeAttr("disabled");
+        //在form的标签中加disabled属性会在form提交时，让有disabled的标签内容为空，所以在提交前在这里把disable属性删掉
+       return true;
+    }
+
+</script>
+{% endblock %}

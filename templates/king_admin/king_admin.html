@@ -2,9 +2,10 @@
 {% extends 'base.html' %}
 {#继承base.html#}
 {% load my_tags %}
+
+
 {% block body %}
 <body>
-
     <nav class="navbar navbar-inverse navbar-fixed-top">
       <div class="container-fluid">
         <div class="navbar-header">
@@ -14,7 +15,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="https://v3.bootcss.com/examples/dashboard/#"> Student CRM</a>
+          <a class="navbar-brand" href="#"> Student CRM</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
@@ -30,29 +31,33 @@
     {% block container %}
     <div class="row">
         <div class="panel panel-info">
+        {% for app_name,app_tables in table_list.items %}
           <div class="panel-heading">
-            <h3 class="panel-title">Panel title</h3>
+            <h3 class="panel-title">{{ app_name }}</h3>
           </div>
           <div class="panel-body">
-            {{ table_list }}
-              {% for app_name,app_tables in table_list.items %}
-                 <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>{{ app_name }}</th>
-                        </tr>
-                    </thead>
+{#              {% for app_name,app_tables in table_list.items %}#}
+                 <table class="table table-hover " style="marker-end:none">
+{#                    <thead>#}
+{#                        <tr>#}
+{#                            <th>{{ app_name }}</th>#}
+{#                        </tr>#}
+{#                    </thead>#}
                     <tbody>
                         {% for table_name,admin  in app_tables.items %}
                             <tr>
                                 <td>
                                     <a href="{% url 'table_index' app_name table_name %}">
 {#                                        跳转，并把app_name table_name 传到 'table_index' 的后台#}
-                                       {% app_table_name admin %}
+                                       <b>{% app_table_name admin %}</b>
+{#                                        获得表的别名#}
                                     </a>
                                 </td>
-                                <td>add</td>
-                                <td>change</td>
+
+                                <td><a href="{{ request.path }}/{{ app_name }}/{{ table_name }}/add/">
+                                    <span class="glyphicon glyphicon-plus "  aria-hidden="true">add</span></a></td>
+                                <td><a href="{% url 'table_index' app_name table_name %}">
+                                    <span class="glyphicon glyphicon-pencil" aria-hidden="true">change</span></a></td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -63,18 +68,9 @@
     </div>
     {% endblock %}
 </div>
-
 </body>
 {% endblock %}
 
- <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="/static/js/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-    <script src="/static/js/bootstrap.min.js"></script>
-    <!-- Just to make our placeholder images work. Don't actually copy the next line! -->
-    <script src="/static/js/holder.min.js"></script>
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="/static/js/ie10-viewport-bug-workaround.js"></script>
+
+
 

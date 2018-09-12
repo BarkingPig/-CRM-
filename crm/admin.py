@@ -1,15 +1,33 @@
 from django.contrib import admin
 from crm import models
+from django.shortcuts import render
 
 
 # Register your models here.
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('id', 'qq','name', 'source', 'consultant', 'content',  'date')
+    #  在页面显示的字段
     list_filter = ('source', 'consultant', 'date')
+    # 用于筛选的字段
     search_fields = ('qq', 'name', )
-    raw_id_fields = ('consult_course',)
+    # 用于搜索的字段范围
+    # raw_id_fields = ('consult_course',)
+    filter_horizontal = ['tags',]
+    # 显示可选的双框
     list_per_page = 1
+    readonly_fields = ['qq',]
+
+    actions = ["test_action", ]   # 对GO进行私人订制
+    def test_action(self,request,record_list):
+        """
+         # 对GO进行私人订制
+        :param request:
+        :param record_list: 选中的记录组成的列表
+        :return:
+        """
+        print('test action:',self,"---",request,'-----',record_list)
+        return render(request, "king_admin/king_admin.html")
 
 
 class UserProfileAdmin(admin.ModelAdmin):

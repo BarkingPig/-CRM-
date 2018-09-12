@@ -24,7 +24,7 @@ class Customer(models.Model):
     content = models.TextField(verbose_name="咨询详情")
     consultant = models.ForeignKey("UserProfile", on_delete=models.CASCADE)  # 账号
     date = models.DateField(auto_now_add=True)
-    taps = models.ManyToManyField("Tag", blank=True, null=True)
+    tags = models.ManyToManyField("Tag", blank=True, null=True)
 
     def __str__(self):
         return self.qq
