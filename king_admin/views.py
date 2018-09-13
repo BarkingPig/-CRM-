@@ -18,7 +18,7 @@ def table_index(request, app_name, table_name):
     # 是models_class: 相应的表对象 models.UserProfile
 
     if request.method == "POST": #action（执行） 来了，取前端选取的数据
-        print('--------------------',request.POST)
+        # print('--------------------',request.POST)
         selected_ids = request.POST.get("selected_ids")  # 取选择中的数据id
         action = request.POST.get("action")  # 取选中的操作执行函数
         if selected_ids:
@@ -77,10 +77,10 @@ def record_change_index(request, app_name, table_name, record_id):
     :return:
     """
     admin_class = king_admin.enabled_admins[app_name][table_name]
-    model_form_class = forms.create_model_form(request, admin_class)
+    model_form_class = forms.create_model_form(request, admin_class)  # 动态添加form
 
     record_obj = admin_class.model.objects.get(id=record_id)  #  获取的记录对象
-    if request.method == "POST":
+    if request.method == "POST":  # 获取前端修改的form
         form_obj = model_form_class(request.POST, instance=record_obj)  # 更新修改表单
         if form_obj.is_valid():
             form_obj.save()  # 获得报错返回前端显示

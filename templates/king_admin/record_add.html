@@ -9,11 +9,15 @@
     <div class="bs-example" style="margin: 10px;width: auto">
      <form class="form-horizontal" role="form" method="post">{% csrf_token %}
 {#    ???????????????????????????????#}
-    <span style="color: red">{{ form_obj.errors }}</span>
+   {% if form_obj.errors %}
+     <div class="alert alert-danger" role="alert">{{ form_obj.errors }}</div>
+{#     form中的验证错误等   填写错误的报错提示  forms中自带一些表单验证（必填字段不填field.field.required）#}
+     {% endif %}
     {% for field in form_obj %}
       <div class="form-group">
        <label  class="col-sm-2 fieldBox" style="font-weight: normal">
            {% if field.field.required %}
+{#               必填字段不为空#}
                <b>{{ field.field.label }} :</b>
            {% else %}
                 {{ field.label }} :
