@@ -86,6 +86,11 @@ def record_change_index(request, app_name, table_name, record_id):
             form_obj.save()  # 获得报错返回前端显示
     else:
         form_obj = model_form_class(instance=record_obj)  # 让form中有对应的数据
+    print("--------------------------------------11111111111",form_obj.errors.get('__all__'))
+    print("--------------------------------------",dir(form_obj['name']))
+    print("--------------------------------------",form_obj['name'].value)
+    print("--------------------------------------", dir(form_obj['name'].errors))
+    print("--------------------------------------",form_obj['name'].errors.data)
 
     return render(request, 'king_admin/record_change.html',{'form_obj': form_obj,
                                                             "app_name": app_name,

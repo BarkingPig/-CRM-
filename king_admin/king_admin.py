@@ -1,5 +1,7 @@
 from crm import models
 from django.shortcuts import render
+from django.forms import ValidationError  # form验证的报错模块
+from django.utils.translation import ugettext as _  # 国际化模块
 
 enabled_admins = {}  # {app_name：{table_name：该表要在前端显示的字段表对象,....}}保存 数据
 
@@ -12,13 +14,46 @@ class BaseAdmin(object):  # 基类  前端要展示的 register()中的admin_cla
     actions = []  # 自定义执行（框）的函数
     readonly_fields = []  # 只读的表单自定义验证
 
+    def delete_record_action(self, request, selected_objs):
+        """
+         # 对GO进行私人订制  删除选中记录
+        :param request:
+        :param selected_objs: 选中的记录组成的列表
+        :return:
+        """
+        app_name = self.model._meta.app_label
+        table_name = self.model._meta.model_name
+        # print("--->delete_selected_objs", self, request, selected_objs)
+        if request.POST.get("delete_confirm") == "yes":
+            selected_objs.delete()
+            return selected_objs("/king_admin/%s/%s/" % (app_name, table_name))
+        selected_ids = ','.join([str(i.id) for i in selected_objs])
+        return render(request, "king_admin/record_delete.html", {"obj_list": selected_objs,
+                                                                 "admin_class": self,
+                                                                 "app_name": app_name,
+                                                                 "table_name": table_name,
+                                                                 "selected_ids": selected_ids,
+                                                                 "action": request._admin_action
+                                                                 })
+    delete_record_action.verbose_name = "删除"
+
+    def default_form_verification(self):
+        """
+        用户可以在此进行自定义的表单验证，相当于django form的clean方法
+        可以进行多个验证
+        用户自定义的（默认的表单验证）
+        :return:
+        """
+        pass
+
 class CustomerAdmin(BaseAdmin):  # 前端要展示的  register()中的admin_class
     list_display = ['id', 'qq', 'name', 'source', 'consult_course', 'date']
     list_filters = ['source', 'consultant', 'consult_course', 'date']
     search_fields = ['qq', 'name', ]
     list_per_page = 3
-    actions = ["test_action", "delete_action"]  # 对GO进行私人订制
-    readonly_fields = ['qq', ]
+    actions = ["test_action", "delete_record_action"]  # 对GO进行私人订制
+    readonly_fields = ['qq', 'tags']
+
 
     def test_action(self, request, selected_objs):  # (views)action_func(admin_class, request, selected_objs)
         """
@@ -31,28 +66,33 @@ class CustomerAdmin(BaseAdmin):  # 前端要展示的  register()中的admin_cla
         return render(request, "king_admin/king_admin.html")
     test_action.verbose_name = "测试"
 
-    def delete_action(self, request, selected_objs):
+    def default_form_verification(self):
         """
-         # 对GO进行私人订制
-        :param request:
-        :param selected_objs: 选中的记录组成的列表
+        这个self是动态生成的form（model_form_class)有数据的那种
+        用户可以在此进行自定义的表单字段验证，相当于django form的clean方法
+        用户自定义的（默认的表单验证）
+        验证是不是按要求修改的比较修改后的和修改前的表单form数据
         :return:
         """
-        app_name = self.model._meta.app_label
-        table_name = self.model._meta.model_name
-        print("--->delete_selected_objs", self, request, selected_objs)
-        if request.POST.get("delete_confirm") == "yes":
-            selected_objs.delete()
-            return selected_objs("/king_admin/%s/%s/" % (app_name, table_name))
-        selected_ids = ','.join([str(i.id) for i in selected_objs])
-        return render(request, "king_admin/record_delete.html", {"obj_list": selected_objs,
-                                                                 "admin_class": self,
-                                                                 "app_name": app_name,
-                                                                 "table_name": table_name,
-                                                                 "selected_ids": selected_ids,
-                                                                 "action": request._admin_action
-                                                                 })
-    delete_action.verbose_name = "删除"
+        extra_error_list = []
+        content_restrict = self.cleaned_data['content']
+        if len(content_restrict) > 15:
+            extra_error_list.append(ValidationError(  # 用列表储存多个错误后同时返回（达到同时报多个错误的目的）
+                _('%(field)s 字数不可以超过15个，恭喜你已经成功超过15个！！！！'),
+                code='invalid',
+                params={'field': 'content',},
+            ))
+
+        return extra_error_list
+
+    def clean_name(self):
+        """
+        form表单中单个字段的自定义
+        :return:
+        """
+        # print("name clean validation:", self.cleaned_data["name"])
+        if not self.cleaned_data["name"]:
+            self.add_error('name', "不可以为空")
 
 
 class TagAdmin(BaseAdmin):
@@ -61,6 +101,7 @@ class TagAdmin(BaseAdmin):
 
 class UserProfileAdmin(BaseAdmin):  # 前端要展示的
     list_display = ['name', ]
+    readonly_fields = ['password', 'last_login']
     list_per_page = 1
 
 

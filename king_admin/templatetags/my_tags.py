@@ -362,3 +362,7 @@ def get_action_verbose_name(admin_class, action):
     else:
         action_verbose_name = action
     return action_verbose_name
+
+@register.simple_tag
+def get_all_errors(errors):
+    return errors.get('__all__')

@@ -14,3 +14,6 @@ def salesman_index(request):
 
 def customer_index(request):
     return render(request, 'salesman/customer.html')
+
+def student_index(request):
+    return render(request, 'student/student.html')

@@ -1,5 +1,5 @@
 {% extends 'king_admin/king_admin.html' %}
-
+{% load my_tags %}
 {% block container %}
 <ul class="nav nav-tabs">
   <li role="presentation" ><a href="{% url 'king_admin_index'  %}">首页</a></li>
@@ -7,24 +7,30 @@
   <li role="presentation" class="active"><a href="">AS</a></li>
 </ul>
     <div class="bs-example" style="margin: 10px;width: auto">
-     <form class="form-horizontal" role="form" method="post" onsubmit='return Form_Submit_Before()'>{% csrf_token %}
+     <form class="form-horizontal" role="form" method="post" onsubmit="return Form_Submit_Before()">{% csrf_token %}
 {#    ???????????????????????????????#}
      {% if form_obj.errors %}
-     <div class="alert alert-danger" role="alert">{{ form_obj.errors }}</div>
-{#     form中的验证错误等   填写错误的报错提示#}
+     <div class="alert alert-danger" role="alert">{% get_all_errors form_obj.errors %} </div>
+{#     form中的验证错误等   填写错误的报错提示  这个报出的错误是form表单自定义验证的全局错误#}
      {% endif %}
     {% for field in form_obj %}
+{#        循环表里的字段#}
       <div class="form-group">
        <label  class="col-sm-2 fieldBox" style="font-weight: normal">
            {% if field.field.required %}
-{#               判断字段是不是不可为空的（必填）#}
-               <b>{{ field.field.label }} :</b>
+{#             field.required  判断字段是不是不可为空的（必填就加粗）#}
+               <b>{{ field.label }} :</b>
            {% else %}
                 {{ field.label }} :
            {% endif %}
        </label>
           <div class="col-sm-6 pull-left">
-                {{ field }}
+              {{ field }}
+              <span>{{ field.help_text }}</span>
+              {% if field.errors %}
+                <div class="btn" style="padding: 0; color: #ac2925">{{ field.errors }}</div>
+                  {#     form中的验证错误等   填写错误的报错提示  这个报出的错误是form表单自定义验证的局部（字段）错误#}
+              {% endif %}
           </div>
       </div>
     {% endfor %}
@@ -44,9 +50,10 @@
 <script>
 
     function Form_Submit_Before(){
+        console.log($("form").find("[disabled]"));
         $("form").find("[disabled]").removeAttr("disabled");
         //在form的标签中加disabled属性会在form提交时，让有disabled的标签内容为空，所以在提交前在这里把disable属性删掉
-       return true;
+
     }
 
 </script>

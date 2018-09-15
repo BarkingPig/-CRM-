@@ -137,3 +137,5 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "statics"),  # 添加静态文件
 )
+
+AUTH_USER_MODEL = 'crm.UserProfile'  # 让Django识别自定义重写的用户表

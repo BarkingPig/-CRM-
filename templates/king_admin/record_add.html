@@ -6,7 +6,7 @@
   <li role="presentation"><a href="{% url 'king_admin_index' %}">ASD</a></li>
   <li role="presentation" class="active"><a href="">AS</a></li>
 </ul>
-    <div class="bs-example" style="margin: 10px;width: auto">
+    <div class="bs-example" style="margin: 10px;width: auto" onload="delete_disabled()">
      <form class="form-horizontal" role="form" method="post">{% csrf_token %}
 {#    ???????????????????????????????#}
    {% if form_obj.errors %}
@@ -35,5 +35,12 @@
     </div>
     </form>
     </div>
-
+<script>
+    function delete_disabled(){
+        {#console.log( $("form"));#}
+        $("form").find("[disabled]").removeAttr("disabled");
+        //在form的标签中加disabled（只读）属性会不让你添加，所以在页面加载时这里把disable属性删掉
+    }
+    window.onload = delete_disabled;  //一加载页面就执行delete_disabled 删除只读属性disabled
+</script>
 {% endblock %}

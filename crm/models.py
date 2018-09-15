@@ -1,8 +1,108 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from django.contrib.auth.models import (
+    BaseUserManager, AbstractBaseUser
+)
+from django.utils.translation import gettext_lazy as _  # 国际化
 
 # Create your models here.
+
+# class UserProfile(models.Model):
+#     """账号表"""
+#     user = models.OneToOneField(User, on_delete=models.CASCADE)  # 也是关联外键 一张表
+#     # 只可以关联一次 Django只带的用户表 User
+#     name = models.CharField(max_length=32)
+#     roles = models.ManyToManyField("Role", blank=True, null=True)
+#
+#     # 多对多的关联
+#
+#     def __str__(self):
+#         return self.name
+#
+#     class Meta:
+#         verbose_name_plural = "账号表"
+class UserProfileManager(BaseUserManager):
+    def create_user(self, email, name, password=None):  # 普通用户
+        """
+        Creates and saves a User with the given email, date of
+        birth and password.
+        """
+        if not email:
+            raise ValueError('用户名必须是邮箱')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            name=name,
+        )
+
+        user.set_password(password)  #  密码加密 哈希 错位
+        self.is_active = True   # 是否活跃（是否可以登录）
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, name, password):  # 超级用户
+        """
+        Creates and saves a superuser with the given email, date of
+        birth and password.
+        """
+        user = self.create_user(
+            email,
+            password=password,
+            name=name,
+        )
+        user.is_active = True
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
+
+
+class UserProfile(AbstractBaseUser):
+    '''账号表'''
+    email = models.EmailField(  #
+        verbose_name='邮箱',  # 别名
+        max_length=255,  # 最大长度
+        unique=True,  # 是否唯一
+        null=True  # 是否可为空
+    )
+    name = models.CharField(max_length=32)
+    password = models.CharField(_('password'), max_length=128, help_text="修改密码")  # 密码
+    is_active = models.BooleanField(default=True)  # 是否活跃的
+    is_admin = models.BooleanField(default=False)  # 是否是管理员
+    last_login = models.DateTimeField(_('last login'), blank=True, null=True)  # 上次登陆时间
+    objects = UserProfileManager()  # 密码加密
+
+    USERNAME_FIELD = 'email'  # 以email做主键做用户名
+    REQUIRED_FIELDS = ['name']  # 创建用户时哪些字段是必须的
+
+    def get_full_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def get_short_name(self):
+        # The user is identified by their email address
+        return self.email
+
+    def __str__(self):  # __unicode__ on Python 2
+        return self.email
+
+    def has_perm(self, perm, obj=None):
+        "Does the user have a specific permission?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    def has_module_perms(self, app_label):
+        "Does the user have permissions to view the app `app_label`?"
+        # Simplest possible answer: Yes, always
+        return True
+
+    @property
+    def is_staff(self):
+        "Is the user a member of staff?"
+        # Simplest possible answer: All admins are staff
+        return self.is_admin
+
+    class Meta:
+        verbose_name_plural = "账号表"
 
 class Customer(models.Model):
     """客户信息表"""
@@ -194,22 +294,6 @@ class Payment(models.Model):
 
     class Meta:
         verbose_name_plural = "缴费记录表"
-
-
-class UserProfile(models.Model):
-    """账号表"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE)  # 也是关联外键 一张表
-    # 只可以关联一次 Django只带的用户表 User
-    name = models.CharField(max_length=32)
-    roles = models.ManyToManyField("Role", blank=True, null=True)
-
-    # 多对多的关联
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "账号表"
 
 
 class Role(models.Model):
