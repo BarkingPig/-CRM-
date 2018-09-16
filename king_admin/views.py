@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 
 # Create your views here.
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -107,12 +107,16 @@ def record_add_index(request, app_name, table_name):
     :return:
     """
     admin_class = king_admin.enabled_admins[app_name][table_name]
+    admin_class.is_add_form = True  # ??????????
     model_form_class = forms.create_model_form(request, admin_class)
-
+    print('8888888888888888888888888888888888',model_form_class)
     if request.method == "POST":
         form_obj = model_form_class(request.POST)  # 给出空表单 ？？？？？？？？？？？？？？？？？？
+        print(form_obj)
         if form_obj.is_valid():
+            print('00000000000000000000000000000000000000000000',form_obj.is_valid())
             form_obj.save()  # 获得报错返回前端显示
+            return redirect(request.path.replace("/add/", "/"))  # ?????????
     else:
         form_obj = model_form_class()  # 空表单
 
