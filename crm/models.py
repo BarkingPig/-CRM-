@@ -131,7 +131,7 @@ class Specialty(models.Model):
 class ClassList(models.Model):
     """班级表"""
     branch = models.ForeignKey("Branch", on_delete=models.CASCADE, verbose_name="校区")
-    course = models.ManyToManyField("Course", on_delete=models.CASCADE, verbose_name="课程")
+    course = models.ManyToManyField("Course", verbose_name="课程")
     semester = models.PositiveSmallIntegerField(verbose_name="学期")
     teachers = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="班主任")
     specialty = models.ForeignKey("Specialty", on_delete=models.CASCADE, verbose_name="专业")

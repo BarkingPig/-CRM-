@@ -122,4 +122,4 @@ def register(models_class, admin_class=None):
 
 register(models.UserProfile, UserProfileAdmin)
 register(models.Customer, CustomerAdmin)
-register(models.Tag, TagAdmin)
+
