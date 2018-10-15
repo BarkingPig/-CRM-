@@ -120,6 +120,5 @@ def register(models_class, admin_class=None):
     enabled_admins[models_class._meta.app_label][models_class._meta.model_name] = admin_class
 
 
-register(models.UserProfile, UserProfileAdmin)
-register(models.Customer, CustomerAdmin)
+
 

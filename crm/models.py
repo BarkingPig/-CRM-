@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 from django.utils.translation import gettext_lazy as _  # 国际化
 from django.utils.safestring import mark_safe  # 渲染
 
+
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, name, password=None):  # 普通用户
         """
@@ -49,13 +50,15 @@ class UserProfile(AbstractBaseUser):
         unique=True,  # 是否唯一
         null=True  # 是否可为空
     )
-    name = models.CharField(max_length=32)
     password = models.CharField(_('password'), max_length=128,
                                 help_text=mark_safe("<a href='password'>修改密码</a>"))  # 密码  # 在数据库里储存渲染好的前端代码
+    name = models.CharField(max_length=32, )
     is_active = models.BooleanField(default=True)  # 是否活跃的
     is_admin = models.BooleanField(default=False)  # 是否是管理员
-    last_login = models.DateTimeField(_('last login'), blank=True, null=True)  # 上次登陆时间
+    roles = models.ManyToManyField("Role", blank=True)
     objects = UserProfileManager()  # 密码加密
+    stu_account = models.ForeignKey("Student", verbose_name="关联学生账号", blank=True, null=True,
+                                    on_delete=models.CASCADE)  # 可以为空 可以不填
 
     USERNAME_FIELD = 'email'  # 以email做主键做用户名
     REQUIRED_FIELDS = ['name']  # 创建用户时哪些字段是必须的
@@ -91,6 +94,37 @@ class UserProfile(AbstractBaseUser):
         verbose_name_plural = "账号表"
 
 
+class Student(models.Model):
+    """学生表"""
+    name = models.CharField(max_length=32)
+    dorm = models.ForeignKey("Dorm", on_delete=models.CASCADE, verbose_name="宿舍")
+    gender_choices = {(0, "男"),
+                        (1, "女"),
+                      }
+    attendance = models.SmallIntegerField(choices=gender_choices, default=1)
+    enrolled_class = models.ForeignKey("ClassList", verbose_name="所在班级", on_delete=models.CASCADE )
+    date = models.DateTimeField(auto_now_add=True, verbose_name="登录时间")
+
+    def __str__(self):
+        return "%s %s" % (self.name, self.enrolled_class)
+
+    class Meta:
+        verbose_name_plural = "学生表"
+
+class Grade(models.Model):
+    """成绩表"""
+    course = models.ManyToManyField("Course", verbose_name="课程")
+    student = models.ManyToManyField("Student", verbose_name="学生")
+    grade = models.PositiveIntegerField(verbose_name="成绩", unique=0)
+
+    def __str__(self):
+        return "%d" % (self.grade,)
+
+    class Meta:
+        verbose_name_plural = "成绩表"
+
+
+
 class Course(models.Model):
     """课程表"""
     name = models.CharField(max_length=64, unique=True)
@@ -117,6 +151,36 @@ class Branch(models.Model):
         verbose_name_plural = "校区表"
 
 
+class Dorm(models.Model):
+    """宿舍表"""
+    name = models.CharField(max_length=64, unique=True)
+    address = models.CharField(max_length=64, unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "宿舍表"
+
+
+class Sanitation(models.Model):
+    """宿舍卫生表"""
+    dorm = models.ManyToManyField("Dorm", verbose_name="宿舍")
+    date = models.DateTimeField(verbose_name="检测日期")
+    sanitation_choices = {(0, "非常干净"),
+                          (1, "干净"),
+                          (2, "比较干净"),
+                          (3, "卫生差"),
+                          }
+    attendance = models.SmallIntegerField(choices=sanitation_choices, default=1)
+    def __str__(self):
+        return "%s" % (self.dorm,)
+
+    class Meta:
+        verbose_name_plural = "宿舍卫生表"
+
+
+
 class Specialty(models.Model):
     """专业表"""
     name = models.CharField(max_length=64, unique=True)
@@ -130,24 +194,23 @@ class Specialty(models.Model):
 
 class ClassList(models.Model):
     """班级表"""
+    name = models.CharField(max_length=64, unique=True)
     branch = models.ForeignKey("Branch", on_delete=models.CASCADE, verbose_name="校区")
     course = models.ManyToManyField("Course", verbose_name="课程")
     semester = models.PositiveSmallIntegerField(verbose_name="学期")
     teachers = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="班主任")
     specialty = models.ForeignKey("Specialty", on_delete=models.CASCADE, verbose_name="专业")
-    start_date = models.DateTimeField(verbose_name="开班日期")
-    end_date = models.DateTimeField(verbose_name="结业日期", blank=True, null=True)
 
     def __str__(self):
-        return "%s %s %s" % (self.branch, self.course, self.semester)
+        return "%s" % (self.name)
 
     class Meta:  # 联合唯一
         verbose_name_plural = "班级表"
-        unique_together = ('branch', 'course', 'semester')
+
 
 
 class CourseRecord(models.Model):
-    """老师班级上课记录表"""
+    """老师班级上课记录表，确认老师来上课（老师自己填）"""
     from_class = models.ForeignKey("ClassList", verbose_name="上课班级", on_delete=models.CASCADE)
     teacher = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="教学老师")
     day_num = models.PositiveSmallIntegerField(verbose_name="第几节课")
@@ -166,8 +229,9 @@ class CourseRecord(models.Model):
 
 
 class StudentRecord(models.Model):
-    """学生上课记录表"""
-    course_record = models.ForeignKey("Customer", on_delete=models.CASCADE, verbose_name="课程")  # 外键
+    """学生上课记录表(老师登记，确认学生来上课)"""
+    student = models.ForeignKey("Student", on_delete=models.CASCADE)
+    course_record = models.ForeignKey("CourseRecord", on_delete=models.CASCADE, verbose_name="课程")  # 外键
     attendance_choices = {(0, "已签到"),
                           (1, "迟到"),
                           (2, "缺勤"),
@@ -186,7 +250,7 @@ class StudentRecord(models.Model):
     date = models.DateTimeField(auto_now_add=True, verbose_name="上课记录时间")
 
     def __str__(self):
-        return "%s %s %s" % (self.student, self.course_record, self.score)
+        return "%s %s" % (self.course_record, self.score)
 
     class Meta:
         verbose_name_plural = "学生上课记录表"
@@ -217,18 +281,4 @@ class Menu(models.Model):
         verbose_name_plural = "角色对应的菜单表"
 
 
-class Dormitory(models.Model):
-    """寝室表"""
-    name = models.CharField(max_length=32)
-    sanitation_choices = {(0, "非常干净"),
-                          (1, "干净"),
-                          (2, "比较干净"),
-                          (3, "卫生差"),
-                          }
-    attendance = models.SmallIntegerField(choices=sanitation_choices, default=1)
 
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "寝室表"
