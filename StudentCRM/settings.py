@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'StudentCRM.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'student_crm',
+        'NAME': 'computer_student_crm',
         'USER': 'root',
         'PASSWORD': '123456',
         'HOST': '127.0.0.1',
