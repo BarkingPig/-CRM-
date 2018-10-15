@@ -27,8 +27,8 @@ def create_model_form(request, admin_class):
             '''给所有的form默认加一个clean验证  验证是不是按要求修改的比较修改后的和修改前的表单form数据'''
             print("---对应的表类", admin_class)
             print("---对应的表类自定义的表单验证", admin_class.readonly_fields)
-            print("---动态生成的form表单里的相应的内容（修改前的form内容）", self.instance.tags)
-            print('-----------------tags',getattr(self.instance, 'tags'))
+            # print("---动态生成的form表单里的相应的内容（修改前的form内容）", self.instance.tags)
+            # print('-----------------tags',getattr(self.instance, 'tags'))
 
             for field in admin_class.readonly_fields:  # 循环自定义的表单验证（只读）
                 before_form_field = getattr(self.instance, field)  # 获取修改前表单里设了自定义验证（只读）的字段

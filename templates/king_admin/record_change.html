@@ -27,6 +27,7 @@
           <div class="col-sm-6 pull-left">
               {{ field }}
               <span>{{ field.help_text }}</span>
+{#          提示#}
               {% if field.errors %}
                 <div class="btn" style="padding: 0; color: #ac2925">{{ field.errors }}</div>
                   {#     form中的验证错误等   填写错误的报错提示  这个报出的错误是form表单自定义验证的局部（字段）错误#}

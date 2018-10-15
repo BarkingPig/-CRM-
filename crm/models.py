@@ -4,7 +4,7 @@ from django.contrib.auth.models import (
     BaseUserManager, AbstractBaseUser
 )
 from django.utils.translation import gettext_lazy as _  # 国际化
-
+from django.utils.safestring import mark_safe  # 渲染
 # Create your models here.
 
 # class UserProfile(models.Model):
@@ -65,7 +65,8 @@ class UserProfile(AbstractBaseUser):
         null=True  # 是否可为空
     )
     name = models.CharField(max_length=32)
-    password = models.CharField(_('password'), max_length=128, help_text="修改密码")  # 密码
+    password = models.CharField(_('password'), max_length=128,
+                                help_text=mark_safe("<a href='password'>修改密码</a>"))  # 密码  # 在数据库里储存渲染好的前端代码
     is_active = models.BooleanField(default=True)  # 是否活跃的
     is_admin = models.BooleanField(default=False)  # 是否是管理员
     last_login = models.DateTimeField(_('last login'), blank=True, null=True)  # 上次登陆时间

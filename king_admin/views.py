@@ -76,26 +76,46 @@ def record_change_index(request, app_name, table_name, record_id):
     :param record_id: 要修改的记录对象
     :return:
     """
-    admin_class = king_admin.enabled_admins[app_name][table_name]
+    admin_class = king_admin.enabled_admins[app_name][table_name]  # 表类对象
     model_form_class = forms.create_model_form(request, admin_class)  # 动态添加form
 
     record_obj = admin_class.model.objects.get(id=record_id)  #  获取的记录对象
     if request.method == "POST":  # 获取前端修改的form
-        form_obj = model_form_class(request.POST, instance=record_obj)  # 更新修改表单
+        form_obj = model_form_class(request.POST, instance=record_obj)  # 更新修改表单,获取表单对象
         if form_obj.is_valid():
-            form_obj.save()  # 获得报错返回前端显示
+                form_obj.save()  # 获得报错返回前端显示
     else:
         form_obj = model_form_class(instance=record_obj)  # 让form中有对应的数据
-    print("--------------------------------------11111111111",form_obj.errors.get('__all__'))
-    print("--------------------------------------",dir(form_obj['name']))
-    print("--------------------------------------",form_obj['name'].value)
-    print("--------------------------------------", dir(form_obj['name'].errors))
-    print("--------------------------------------",form_obj['name'].errors.data)
+    # print("--------------------------------------11111111111",form_obj.errors.get('__all__'))
+    # print("--------------------------------------",dir(form_obj['name']))
+    # print("--------------------------------------",form_obj['name'].value)
+    # print("--------------------------------------", dir(form_obj['name'].errors))
+    # print("--------------------------------------",form_obj['name'].errors.data)
 
     return render(request, 'king_admin/record_change.html',{'form_obj': form_obj,
                                                             "app_name": app_name,
                                                             "table_name": table_name
                                                             })
+
+def record_change_password_index(request, app_name, table_name, record_id):
+        admin_class = king_admin.enabled_admins[app_name][table_name]
+        record_obj = admin_class.model.objects.get(id=record_id)  # 获取的记录对象
+        errors = {}  # 储存错误
+        if request.method == 'POST':
+            _password1 = request.POST.get("password1")  # 从前端取数据 get（name）
+            _password2 = request.POST.get("password2")
+            if _password1 == _password2:
+                if len(_password1) > 5:  # 密码的长度，复杂度
+                    record_obj.set_password(_password1)  # 给密码加严
+                    record_obj.save()  # 把更改的密码就存到数据库中
+                    return redirect(request.path.rsplit('password/'))   # url 去password/
+                else:
+                    errors['新密码不安全'] = '大于5个字符。。。。。。'
+            else:
+                errors['两次输入不一致'] = '请输入相同的密码'
+        return render(request, 'king_admin/record_change_password.html', {'record_obj': record_obj,
+                                                                          'errors': errors
+                                                                          })
 
 
 def record_add_index(request, app_name, table_name):
@@ -115,7 +135,7 @@ def record_add_index(request, app_name, table_name):
         print(form_obj)
         if form_obj.is_valid():
             print('00000000000000000000000000000000000000000000',form_obj.is_valid())
-            form_obj.save()  # 获得报错返回前端显示
+            form_obj.save()  # 把表单储存到数据库中
             return redirect(request.path.replace("/add/", "/"))  # ?????????
     else:
         form_obj = model_form_class()  # 空表单

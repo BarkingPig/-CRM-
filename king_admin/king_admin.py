@@ -101,7 +101,7 @@ class TagAdmin(BaseAdmin):
 
 class UserProfileAdmin(BaseAdmin):  # 前端要展示的
     list_display = ['name', ]
-    readonly_fields = ['password', 'last_login']
+    readonly_fields = ['password',]
     list_per_page = 1
 
 
