@@ -108,7 +108,8 @@ class UserProfileAdmin(BaseUserAdmin):
     ordering = ('email',)
     filter_horizontal = ()
 
-admin.site.register(models.UserProfile,)
+
+admin.site.register(models.UserProfile)
 admin.site.register(models.Role)
 admin.site.register(models.Course)
 admin.site.register(models.Branch)

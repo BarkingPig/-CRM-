@@ -52,10 +52,10 @@ class UserProfile(AbstractBaseUser):
     )
     password = models.CharField(_('password'), max_length=128,
                                 help_text=mark_safe("<a href='password'>修改密码</a>"))  # 密码  # 在数据库里储存渲染好的前端代码
-    name = models.CharField(max_length=32, )
+    name = models.CharField(max_length=32, verbose_name="用户名")
     is_active = models.BooleanField(default=True)  # 是否活跃的
     is_admin = models.BooleanField(default=False)  # 是否是管理员
-    roles = models.ManyToManyField("Role", blank=True)
+    roles = models.ManyToManyField("Role", blank=True, null=True)
     objects = UserProfileManager()  # 密码加密
     stu_account = models.ForeignKey("Student", verbose_name="关联学生账号", blank=True, null=True,
                                     on_delete=models.CASCADE)  # 可以为空 可以不填
@@ -93,10 +93,9 @@ class UserProfile(AbstractBaseUser):
     class Meta:
         verbose_name_plural = "账号表"
 
-
 class Student(models.Model):
     """学生表"""
-    name = models.CharField(max_length=32)
+    name = models.CharField(max_length=32, verbose_name="姓名")
     dorm = models.ForeignKey("Dorm", on_delete=models.CASCADE, verbose_name="宿舍")
     gender_choices = {(0, "男"),
                         (1, "女"),
@@ -113,8 +112,8 @@ class Student(models.Model):
 
 class Grade(models.Model):
     """成绩表"""
-    course = models.ManyToManyField("Course", verbose_name="课程")
-    student = models.ManyToManyField("Student", verbose_name="学生")
+    course = models.ForeignKey("Course", verbose_name="课程", on_delete=models.CASCADE)
+    student = models.ForeignKey("Student", verbose_name="学生", on_delete=models.CASCADE)
     grade = models.PositiveIntegerField(verbose_name="成绩", unique=0)
 
     def __str__(self):
@@ -127,8 +126,7 @@ class Grade(models.Model):
 
 class Course(models.Model):
     """课程表"""
-    name = models.CharField(max_length=64, unique=True)
-    price = models.PositiveSmallIntegerField()
+    name = models.CharField(max_length=64, unique=True, verbose_name="课程名")
     period = models.PositiveSmallIntegerField(verbose_name="周期（星期）")
     outline = models.TextField(verbose_name="课程大纲")
 
@@ -165,7 +163,7 @@ class Dorm(models.Model):
 
 class Sanitation(models.Model):
     """宿舍卫生表"""
-    dorm = models.ManyToManyField("Dorm", verbose_name="宿舍")
+    dorm = models.ForeignKey("Dorm", verbose_name="宿舍", on_delete=models.CASCADE)
     date = models.DateTimeField(verbose_name="检测日期")
     sanitation_choices = {(0, "非常干净"),
                           (1, "干净"),
@@ -194,7 +192,7 @@ class Specialty(models.Model):
 
 class ClassList(models.Model):
     """班级表"""
-    name = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=64, unique=True, verbose_name="班级名")
     branch = models.ForeignKey("Branch", on_delete=models.CASCADE, verbose_name="校区")
     course = models.ManyToManyField("Course", verbose_name="课程")
     semester = models.PositiveSmallIntegerField(verbose_name="学期")
@@ -246,7 +244,6 @@ class StudentRecord(models.Model):
                      (0, "D-"),
                      }
     score = models.SmallIntegerField(choices=score_choices, verbose_name="平时成绩", )
-    memo = models.TextField(verbose_name="作业备注", blank=True, null=True)
     date = models.DateTimeField(auto_now_add=True, verbose_name="上课记录时间")
 
     def __str__(self):
