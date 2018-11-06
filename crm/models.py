@@ -60,6 +60,7 @@ class UserProfile(AbstractBaseUser):
     stu_account = models.ForeignKey("Student", verbose_name="关联学生账号", blank=True, null=True,
                                     on_delete=models.CASCADE)  # 可以为空 可以不填
 
+
     USERNAME_FIELD = 'email'  # 以email做主键做用户名
     REQUIRED_FIELDS = ['name']  # 创建用户时哪些字段是必须的
 
@@ -93,15 +94,16 @@ class UserProfile(AbstractBaseUser):
     class Meta:
         verbose_name_plural = "账号表"
 
+
 class Student(models.Model):
     """学生表"""
     name = models.CharField(max_length=32, verbose_name="姓名")
     dorm = models.ForeignKey("Dorm", on_delete=models.CASCADE, verbose_name="宿舍")
     gender_choices = {(0, "男"),
-                        (1, "女"),
+                      (1, "女"),
                       }
     attendance = models.SmallIntegerField(choices=gender_choices, default=1)
-    enrolled_class = models.ForeignKey("ClassList", verbose_name="所在班级", on_delete=models.CASCADE )
+    enrolled_class = models.ForeignKey("ClassList", verbose_name="所在班级", on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True, verbose_name="登录时间")
 
     def __str__(self):
@@ -109,6 +111,7 @@ class Student(models.Model):
 
     class Meta:
         verbose_name_plural = "学生表"
+
 
 class Grade(models.Model):
     """成绩表"""
@@ -123,10 +126,10 @@ class Grade(models.Model):
         verbose_name_plural = "成绩表"
 
 
-
 class Course(models.Model):
     """课程表"""
     name = models.CharField(max_length=64, unique=True, verbose_name="课程名")
+    teacher = models.ForeignKey("UserProfile", verbose_name="任课老师", on_delete=models.CASCADE)
     period = models.PositiveSmallIntegerField(verbose_name="周期（星期）")
     outline = models.TextField(verbose_name="课程大纲")
 
@@ -135,18 +138,6 @@ class Course(models.Model):
 
     class Meta:
         verbose_name_plural = "课程表"
-
-
-class Branch(models.Model):
-    """校区表"""
-    name = models.CharField(max_length=128, unique=True)
-    address = models.CharField(max_length=128)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "校区表"
 
 
 class Dorm(models.Model):
@@ -171,6 +162,7 @@ class Sanitation(models.Model):
                           (3, "卫生差"),
                           }
     attendance = models.SmallIntegerField(choices=sanitation_choices, default=1)
+
     def __str__(self):
         return "%s" % (self.dorm,)
 
@@ -178,33 +170,18 @@ class Sanitation(models.Model):
         verbose_name_plural = "宿舍卫生表"
 
 
-
-class Specialty(models.Model):
-    """专业表"""
-    name = models.CharField(max_length=64, unique=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name_plural = "专业表"
-
-
 class ClassList(models.Model):
     """班级表"""
     name = models.CharField(max_length=64, unique=True, verbose_name="班级名")
-    branch = models.ForeignKey("Branch", on_delete=models.CASCADE, verbose_name="校区")
     course = models.ManyToManyField("Course", verbose_name="课程")
-    semester = models.PositiveSmallIntegerField(verbose_name="学期")
-    teachers = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="班主任")
-    specialty = models.ForeignKey("Specialty", on_delete=models.CASCADE, verbose_name="专业")
+    semester = models.PositiveSmallIntegerField(verbose_name="届数")
+    teachers = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="班主任",)
 
     def __str__(self):
-        return "%s" % (self.name)
+        return "%s" % self.name
 
     class Meta:  # 联合唯一
         verbose_name_plural = "班级表"
-
 
 
 class CourseRecord(models.Model):
@@ -212,8 +189,6 @@ class CourseRecord(models.Model):
     from_class = models.ForeignKey("ClassList", verbose_name="上课班级", on_delete=models.CASCADE)
     teacher = models.ForeignKey("UserProfile", on_delete=models.CASCADE, verbose_name="教学老师")
     day_num = models.PositiveSmallIntegerField(verbose_name="第几节课")
-    has_homework = models.BooleanField(default=True, verbose_name="是否有作业")
-    homework_title = models.CharField(max_length=128, blank=True, null=True, verbose_name="作业名称")
     homework_content = models.TextField(verbose_name="作业内容", blank=True, null=True)
     outline = models.TextField(verbose_name="本节课大纲")
     date = models.DateTimeField(auto_now_add=True, verbose_name="上课时间")
@@ -267,7 +242,7 @@ class Role(models.Model):
 
 
 class Menu(models.Model):
-    """角色对应的菜单表"""
+    """角色对应的菜单和权限表"""
     name = models.CharField(max_length=32)
     url_name = models.CharField(max_length=64)  # 菜单的路径
 
@@ -275,7 +250,4 @@ class Menu(models.Model):
         return self.name
 
     class Meta:
-        verbose_name_plural = "角色对应的菜单表"
-
-
-
+        verbose_name_plural = "角色对应的菜单和权限表"

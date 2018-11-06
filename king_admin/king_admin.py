@@ -35,6 +35,7 @@ class BaseAdmin(object):  # 基类  前端要展示的 register()中的admin_cla
                                                                  "selected_ids": selected_ids,
                                                                  "action": request._admin_action
                                                                  })
+
     delete_record_action.verbose_name = "删除"
 
     def default_form_verification(self):
@@ -46,64 +47,73 @@ class BaseAdmin(object):  # 基类  前端要展示的 register()中的admin_cla
         """
         pass
 
-class CustomerAdmin(BaseAdmin):  # 前端要展示的  register()中的admin_class
-    list_display = ['id', 'qq', 'name', 'source', 'consult_course', 'date']
-    list_filters = ['source', 'consultant', 'consult_course', 'date']
-    search_fields = ['qq', 'name', ]
-    list_per_page = 3
-    actions = ["test_action", "delete_record_action"]  # 对GO进行私人订制
-    readonly_fields = ['qq', 'tags']
 
-
-    def test_action(self, request, selected_objs):  # (views)action_func(admin_class, request, selected_objs)
-        """
-         # 对GO进行私人订制
-        :param request:
-        :param selected_objs: 选中的记录组成的列表
-        :return:
-        """
-        print('test action:', self, "---", request, '-----', selected_objs)
-        return render(request, "king_admin/king_admin.html")
-    test_action.verbose_name = "测试"
-
-    def default_form_verification(self):
-        """
-        这个self是动态生成的form（model_form_class)有数据的那种
-        用户可以在此进行自定义的表单字段验证，相当于django form的clean方法
-        用户自定义的（默认的表单验证）
-        验证是不是按要求修改的比较修改后的和修改前的表单form数据
-        :return:
-        """
-        extra_error_list = []
-        content_restrict = self.cleaned_data['content']
-        if len(content_restrict) > 15:
-            extra_error_list.append(ValidationError(  # 用列表储存多个错误后同时返回（达到同时报多个错误的目的）
-                _('%(field)s 字数不可以超过15个，恭喜你已经成功超过15个！！！！'),
-                code='invalid',
-                params={'field': 'content',},
-            ))
-
-        return extra_error_list
-
-    def clean_name(self):
-        """
-        form表单中单个字段的自定义
-        :return:
-        """
-        # print("name clean validation:", self.cleaned_data["name"])
-        if not self.cleaned_data["name"]:
-            self.add_error('name', "不可以为空")
-
-
-class TagAdmin(BaseAdmin):
+class StudentAdmin(BaseAdmin):  # 前端要展示的  register()中的admin_class
     list_display = ['id', 'name']
+    list_filters = ['dorm', 'name']
+    search_fields = ['id', 'name', ]
+    list_per_page = 3
+    # actions = ["test_action", "delete_record_action"]  # 对GO进行私人订制
+    # readonly_fields = ['qq',]
+    #
+    #
+    # def test_action(self, request, selected_objs):  # (views)action_func(admin_class, request, selected_objs)
+    #     """
+    #      # 对GO进行私人订制
+    #     :param request:
+    #     :param selected_objs: 选中的记录组成的列表
+    #     :return:
+    #     """
+    #     print('test action:', self, "---", request, '-----', selected_objs)
+    #     return render(request, "king_admin/king_admin.html")
+    # test_action.verbose_name = "测试"
+
+# def default_form_verification(self):
+#     """
+#     这个self是动态生成的form（model_form_class)有数据的那种
+#     用户可以在此进行自定义的表单字段验证，相当于django form的clean方法
+#     用户自定义的（默认的表单验证）
+#     验证是不是按要求修改的比较修改后的和修改前的表单form数据
+#     :return:
+#     """
+#     extra_error_list = []
+#     content_restrict = self.cleaned_data['content']
+#     if len(content_restrict) > 15:
+#         extra_error_list.append(ValidationError(  # 用列表储存多个错误后同时返回（达到同时报多个错误的目的）
+#             _('%(field)s 字数不可以超过15个，恭喜你已经成功超过15个！！！！'),
+#             code='invalid',
+#             params={'field': 'content',},
+#         ))
+#
+#     return extra_error_list
+
+# def clean_name(self):
+#     """
+#     form表单中单个字段的自定义
+#     :return:
+#     """
+#     # print("name clean validation:", self.cleaned_data["name"])
+#     if not self.cleaned_data["name"]:
+#         self.add_error('name', "不可以为空")
+
 
 
 class UserProfileAdmin(BaseAdmin):  # 前端要展示的
     list_display = ['name', ]
-    readonly_fields = ['password',]
+    readonly_fields = ['password', ]
     list_per_page = 1
 
+class ClassListAdmin(BaseAdmin):
+    list_display = ['id', 'name']
+    list_filters = ['id', 'name']
+    search_fields = ['id', 'name', ]
+    list_per_page = 3
+
+class DormAdmin(BaseAdmin):
+    list_display = ['id', 'name','address']
+    list_filters = ['id', 'name']
+    search_fields = ['id', 'name', ]
+    list_per_page = 8
 
 def register(models_class, admin_class=None):
     """
@@ -112,7 +122,7 @@ def register(models_class, admin_class=None):
     :param admin_class:  该表要显示的定制化表对象
     :return:
     """
-    if models_class._meta.app_label not in enabled_admins: #？？？？？  # models.UserProfile._meta.
+    if models_class._meta.app_label not in enabled_admins:  # ？？？？？  # models.UserProfile._meta.
         enabled_admins[models_class._meta.app_label] = {}  # 获取app name
 
     admin_class.model = models_class
@@ -120,5 +130,10 @@ def register(models_class, admin_class=None):
     enabled_admins[models_class._meta.app_label][models_class._meta.model_name] = admin_class
 
 
+register(models.UserProfile, UserProfileAdmin)
 
+register(models.Student, StudentAdmin)
 
+register(models.ClassList, ClassListAdmin)
+
+register(models.Dorm, DormAdmin)
