@@ -277,7 +277,9 @@ def get_associated_record(obj_list):
     :param obj_list: 要删除记录对象组成的列表
     :return:
     '''
+    print("2222222222222222222211111111111111111", obj_list)
     if obj_list:
+        print("11111111112222222222222222222211111111111111111", obj_list)
         return mark_safe(recursive_related_objs_lookup(obj_list))
 
 

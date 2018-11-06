@@ -13,6 +13,7 @@ class BaseAdmin(object):  # 基类  前端要展示的 register()中的admin_cla
     list_per_page = 20  # 默认一页显示多少条数据
     actions = []  # 自定义执行（框）的函数
     readonly_fields = []  # 只读的表单自定义验证
+    readonly_table = False  # 只读表
 
     def delete_record_action(self, request, selected_objs):
         """

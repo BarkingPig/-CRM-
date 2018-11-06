@@ -152,10 +152,23 @@ def record_delete_index(request, app_name, table_name , obj_id):
     :param obj_list: 要删除的记录对象组成的列表（可能涉及到同时删除多个记录）
     :return:
     """
+    obj_list =[]
     admin_class = king_admin.enabled_admins[app_name][table_name]
 
-    obj = admin_class.model.objects.get(id=obj_id)
-    return render(request, 'king_admin/record_delete.html',{  "obj":obj,
+    obj_list.append(admin_class.model.objects.get(id=obj_id))
+
+    if admin_class.readonly_table:
+        errors = {"readonly_table": "table is readonly ,obj [%s] cannot be deleted" % obj_list[0]}
+    else:
+        errors = {}
+    if request.method == "POST":
+        if not admin_class.readonly_table:
+            obj_list[0].delete()
+            return redirect("/king_admin/%s/%s/" %(app_name,table_name))
+
+    return render(request, 'king_admin/record_delete.html',{  "obj_list":obj_list,
                                                               "admin_class" : admin_class,
                                                               "app_name": app_name,
-                                                              "table_name": table_name})
+                                                              "table_name": table_name,
+                                                              "errors": errors
+                                                              })
